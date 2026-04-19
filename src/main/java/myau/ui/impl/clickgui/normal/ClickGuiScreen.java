@@ -103,7 +103,8 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(ESP2D.class),
                 Myau.moduleManager.getModule(TeamHealthDisplay.class),
                 Myau.moduleManager.getModule(SeasonDisplay.class),
-                Myau.moduleManager.getModule(Animations.class)
+                Myau.moduleManager.getModule(Animations.class),
+                Myau.moduleManager.getModule(ClickGUIModule.class)
         );
 
         List<Module> playerModules = Arrays.asList(
@@ -203,6 +204,7 @@ public class ClickGuiScreen extends GuiScreen {
     @Override
     public void initGui() {
         super.initGui();
+        myau.util.font.FontManager.initializeFonts();
         this.isClosing = false;
         this.openTime = System.currentTimeMillis();
         this.lastFrameTime = System.nanoTime();

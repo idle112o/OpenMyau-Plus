@@ -87,7 +87,9 @@ public class ModuleEntry extends Component {
             RenderUtil.drawRoundedRect(x + 2, scrolledY, width - 4, height, 4, hoverColor, true, true, true, true);
         }
 
-        int targetColor = module.isEnabled() ? MaterialTheme.getRGB(MaterialTheme.PRIMARY_COLOR) : MaterialTheme.getRGB(MaterialTheme.TEXT_COLOR);
+        myau.module.modules.ClickGUIModule clickGUI = (myau.module.modules.ClickGUIModule) Myau.moduleManager.getModule("ClickGUI");
+        java.awt.Color accent = (clickGUI != null) ? clickGUI.getAccentColor() : MaterialTheme.PRIMARY_COLOR;
+        int targetColor = module.isEnabled() ? MaterialTheme.getRGB(accent) : MaterialTheme.getRGB(MaterialTheme.TEXT_COLOR);
         this.currentColor = AnimationUtil.interpolateColor(this.currentColor, targetColor, 10.0f * deltaTime);
         int finalTextColor = (this.currentColor & 0x00FFFFFF) | (alpha << 24);
 
