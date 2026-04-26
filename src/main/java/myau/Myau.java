@@ -12,6 +12,8 @@ import myau.module.ModuleManager;
 import myau.module.modules.*;
 import myau.property.Property;
 import myau.property.PropertyManager;
+import myau.ui.impl.clickgui.normal.ClickGuiScreen;
+import myau.util.font.FontManager;
 
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
@@ -197,6 +199,9 @@ public class Myau {
         if (targetManager.file.exists()) {
             targetManager.load();
         }
+        FontManager.initializeFonts();
+        ClickGuiScreen.getInstance();
+
         Runtime.getRuntime().addShutdownHook(new Thread(config::save));
 
         try (InputStreamReader reader = new InputStreamReader(Objects.requireNonNull(Myau.class.getResourceAsStream("/version.json")), StandardCharsets.UTF_8)) {

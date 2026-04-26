@@ -22,13 +22,14 @@ public class FontUtil {
             if (locationMap.containsKey(location)) {
                 font = locationMap.get(location).deriveFont(Font.PLAIN, size);
             } else {
-                InputStream is = mc.getResourceManager().getResource(new ResourceLocation("myau/font/" + location)).getInputStream();
+                InputStream is = mc.getResourceManager().getResource(new ResourceLocation("myau:font/" + location)).getInputStream();
                 locationMap.put(location, font = Font.createFont(0, is));
                 font = font.deriveFont(Font.PLAIN, size);
             }
         } catch (Exception exception) {
-            exception.printStackTrace();
+            System.err.println("[Myau] Failed to load font: " + location);
             font = new Font("default", Font.PLAIN, size);
+            locationMap.put(location, font);
         }
         return font;
     }
