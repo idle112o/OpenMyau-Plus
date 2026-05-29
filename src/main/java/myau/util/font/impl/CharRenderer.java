@@ -9,7 +9,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 public class CharRenderer {
-    final float imgSize;
+    final float imgSize = 1024;
     final CharData[] charData = new CharData[256];
     final int charOffset = 0;
     Font font;
@@ -21,7 +21,6 @@ public class CharRenderer {
         this.font = font;
         this.antiAlias = antiAlias;
         this.fractionalMetrics = fractionalMetrics;
-        this.imgSize = font.getSize() >= 48 ? 1024 : 512;
         this.tex = this.setupTexture(font, antiAlias, fractionalMetrics, this.charData);
     }
 

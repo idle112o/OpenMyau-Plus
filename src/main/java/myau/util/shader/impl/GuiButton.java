@@ -49,7 +49,7 @@ public class GuiButton extends net.minecraft.client.gui.GuiButton
 
             org.lwjgl.util.Color gradientColor = RenderUtil.interpolateColorsBackAndForth(15, 75, PRIMARY_COLOR, SECONDARY_COLOR, false);
 
-             int textColor = isMouseOverText ? (0xFF000000 | (gradientColor.getRed() << 16)  | (gradientColor.getGreen() << 8) | gradientColor.getBlue()) : 0xFFFFFFFF;
+            int textColor = isMouseOverText ? new Color(gradientColor.getRed(), gradientColor.getGreen(), gradientColor.getBlue()).getRGB() : new Color(255, 255, 255).getRGB();
             fontRenderer.drawCenteredString(this.displayString,
                     this.xPosition + this.width / 2,
                     this.yPosition + (this.height - 8) / 2,

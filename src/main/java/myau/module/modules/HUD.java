@@ -34,19 +34,6 @@ import java.util.stream.Collectors;
 
 public class HUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public static int targetHUDX = 100;
-    public static int targetHUDY = 100;
-
-    public static void setTargetHUDPosition(int x, int y) {
-        targetHUDX = x;
-        targetHUDY = y;
-    }
-
-    public static void resetTargetHUDPosition() {
-        targetHUDX = 100;
-        targetHUDY = 100;
-    }
-
     private static final Set<Class<?>> RENDER_MODULES = new HashSet<>(Arrays.<Class<?>>asList(
             ESP.class, Chams.class, FullBright.class, Tracers.class, NameTags.class, Xray.class,
             TargetESP.class, TargetHUD.class, Indicators.class, BedESP.class, ItemESP.class,
@@ -83,6 +70,8 @@ public class HUD extends Module {
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
     public final ModeProperty interfaceMode = new ModeProperty("interface", 0, new String[]{"MYAU", "CREIDA"});
     public final PercentProperty background = new PercentProperty("background", 25);
+    public final BooleanProperty blur = new BooleanProperty("blur", true);
+    public final BooleanProperty bloom = new BooleanProperty("bloom", true);
     public final BooleanProperty showBar = new BooleanProperty("bar", true);
     public final ModeProperty sidebarMode = new ModeProperty("sidebar-mode", 0, new String[]{"RIGHT", "LEFT", "TOP", "OUTLINE", "NONE"}, this.showBar::getValue);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true);
@@ -768,19 +757,23 @@ public class HUD extends Module {
         float slide = (1.0F - motion) * 14.0F + (1.0F - alpha) * 5.0F;
         float renderX = x + slide;
         int statusColor = notificationStatusColor(text, alpha);
-        int glass = new Color(10, 12, 16, (int) (92 * alpha)).getRGB();
-        int hoverLayer = new Color(255, 255, 255, (int) (9 * alpha)).getRGB();
+        int glass = new Color(10, 12, 16, (int) ((this.blur.getValue() ? 92 : 70) * alpha)).getRGB();
+        int hoverLayer = new Color(255, 255, 255, (int) ((this.blur.getValue() ? 9 : 0) * alpha)).getRGB();
         int border = new Color(255, 255, 255, (int) (24 * alpha)).getRGB();
-        int depth = new Color(0, 0, 0, (int) (28 * alpha)).getRGB();
+        int depth = new Color(0, 0, 0, (int) ((this.bloom.getValue() ? 28 : 0) * alpha)).getRGB();
         int neutralText = new Color(238, 241, 245, (int) (242 * alpha)).getRGB();
         float radius = 6.0F;
 
-        RenderUtil.drawRoundedRect(renderX + 1.0F, y + 1.5F, boxWidth, boxHeight, radius + 1.0F,
-                depth, true, true, true, true);
+        if (this.bloom.getValue()) {
+            RenderUtil.drawRoundedRect(renderX + 1.0F, y + 1.5F, boxWidth, boxHeight, radius + 1.0F,
+                    depth, true, true, true, true);
+        }
         RenderUtil.drawRoundedRect(renderX, y, boxWidth, boxHeight, radius,
                 glass, true, true, true, true);
-        RenderUtil.drawRoundedRect(renderX + 1.0F, y + 1.0F, boxWidth - 2.0F, boxHeight - 2.0F, radius - 1.0F,
-                hoverLayer, true, true, true, true);
+        if (this.blur.getValue()) {
+            RenderUtil.drawRoundedRect(renderX + 1.0F, y + 1.0F, boxWidth - 2.0F, boxHeight - 2.0F, radius - 1.0F,
+                    hoverLayer, true, true, true, true);
+        }
         RenderUtil.drawRoundedRectOutline(renderX + 0.5F, y + 0.5F, boxWidth - 1.0F, boxHeight - 1.0F,
                 radius, 1.0F, border, true, true, true, true);
 

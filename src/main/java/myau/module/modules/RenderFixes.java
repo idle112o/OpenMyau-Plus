@@ -84,9 +84,27 @@ public class RenderFixes extends Module {
         return module == null || !module.isEnabled() || module.shader.getValue();
     }
 
+    public static boolean shouldUseHudBlur() {
+        HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
+        return hud == null || hud.blur.getValue();
+    }
+
+    public static boolean shouldUseHudBloom() {
+        HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
+        return hud == null || hud.bloom.getValue();
+    }
+
+    public static boolean shouldUseModernHudEffects() {
+        return shouldUseHudBlur() || shouldUseHudBloom();
+    }
+
+    public static boolean shouldUseHudShaders() {
+        return shouldUseShaders() && shouldUseModernHudEffects();
+    }
+
     public static boolean isChatActive() {
         RenderFixes module = get();
-        return module != null && module.isEnabled() && module.chat.getValue();
+        return module != null && module.isEnabled() && module.chat.getValue() && shouldUseModernHudEffects();
     }
 
     public static boolean isChatScreenOpen() {
@@ -99,7 +117,7 @@ public class RenderFixes extends Module {
 
     public static boolean isScoreboardActive() {
         RenderFixes module = get();
-        return module != null && module.isEnabled() && module.scoreboard.getValue();
+        return module != null && module.isEnabled() && module.scoreboard.getValue() && shouldUseModernHudEffects();
     }
 
     public static int getChatOffsetX() {
@@ -366,22 +384,28 @@ public class RenderFixes extends Module {
         }
 
         RenderUtil.resetColor();
-        if (shouldUseShaders()) {
-            BlurUtils.prepareBloom();
-            RoundedUtils.drawRound(x, y, width, height, radius, true, new Color(0, 0, 0, Math.min(210, alpha + 82)));
-            BlurUtils.bloomEnd(3, 2.0F);
+        if (shouldUseHudShaders()) {
+            if (shouldUseHudBloom()) {
+                BlurUtils.prepareBloom();
+                RoundedUtils.drawRound(x, y, width, height, radius, true, new Color(0, 0, 0, Math.min(210, alpha + 82)));
+                BlurUtils.bloomEnd(3, 2.0F);
+            }
 
-            BlurUtils.prepareBlur();
-            RoundedUtils.drawRound(x, y, width, height, radius, true, new Color(0, 0, 0, Math.min(180, alpha + 48)));
-            BlurUtils.blurEnd(2, 3.0F);
+            if (shouldUseHudBlur()) {
+                BlurUtils.prepareBlur();
+                RoundedUtils.drawRound(x, y, width, height, radius, true, new Color(0, 0, 0, Math.min(180, alpha + 48)));
+                BlurUtils.blurEnd(2, 3.0F);
+            }
         }
 
         int background = new Color(7, 9, 13, alpha).getRGB();
-        int highlight = new Color(255, 255, 255, shouldUseShaders() ? 16 : 9).getRGB();
-        int outline = new Color(255, 255, 255, shouldUseShaders() ? 30 : 18).getRGB();
+        int highlight = new Color(255, 255, 255, shouldUseHudBlur() ? 16 : 9).getRGB();
+        int outline = new Color(255, 255, 255, shouldUseHudBloom() ? 30 : 18).getRGB();
         RenderUtil.drawRoundedRect(x, y, width, height, radius, background, true, true, true, true);
-        RenderUtil.drawRoundedRect(x + 1.0F, y + 1.0F, width - 2.0F, height - 2.0F, Math.max(0.0F, radius - 1.0F),
-                highlight, true, true, true, true);
+        if (shouldUseHudBlur()) {
+            RenderUtil.drawRoundedRect(x + 1.0F, y + 1.0F, width - 2.0F, height - 2.0F, Math.max(0.0F, radius - 1.0F),
+                    highlight, true, true, true, true);
+        }
         RenderUtil.drawRoundedRectOutline(x + 0.5F, y + 0.5F, width - 1.0F, height - 1.0F, radius, 1.0F,
                 outline, true, true, true, true);
         GlStateManager.enableTexture2D();

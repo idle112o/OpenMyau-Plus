@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 
 public class NotificationManager {
-    private static final int MAX_ENTRIES = 32;
 
     public static class NotificationEntry {
         public final String message;
@@ -48,31 +47,18 @@ public class NotificationManager {
     }
 
     public synchronized void add(String message, long durationMillis, int color) {
-        if (message == null || message.trim().isEmpty()) {
-            return;
-        }
-
-        this.cleanupExpired();
-        while (this.entries.size() >= MAX_ENTRIES) {
-            this.entries.remove(0);
-        }
-
         this.entries.add(new NotificationEntry(message, durationMillis, color));
     }
 
     public synchronized List<NotificationEntry> getActive() {
         // cleanup expired entries and return a copy of active entries (newest last)
-        this.cleanupExpired();
-        return new ArrayList<>(this.entries);
-    }
-
-    private void cleanupExpired() {
         Iterator<NotificationEntry> it = this.entries.iterator();
         while (it.hasNext()) {
             if (it.next().isExpired()) {
                 it.remove();
             }
         }
+        return new ArrayList<>(this.entries);
     }
 
     public synchronized void clear() {

@@ -19,7 +19,6 @@ public class PlayerStateManager {
     public void handlePacket(Packet<?> packet) {
         if (packet instanceof C02PacketUseEntity) {
             this.attacking = true;
-            this.updateCombatState();
         }
         if (packet instanceof C07PacketPlayerDigging) {
             this.digging = true;
@@ -32,7 +31,6 @@ public class PlayerStateManager {
         }
         if (packet instanceof C0APacketAnimation) {
             this.swinging = true;
-            this.updateCombatState();
         }
         if (packet instanceof C03PacketPlayer) {
             this.attacking = false;
@@ -57,6 +55,7 @@ public class PlayerStateManager {
     // Skiding HourClient Btw :sob:
     @EventTarget
     public void onTick(TickEvent event) {
+        myau.Myau.notificationManager.add("PlayerStateManager: Tick", 0xADD8E6); // Light blue for general tick
         if (event.getType() == myau.event.types.EventType.POST) { // Check POST tick to ensure all packet handling for the tick is done
             if (this.inCombat && (System.currentTimeMillis() - this.lastCombatActionTime > COMBAT_TIMEOUT)) {
                 this.inCombat = false;

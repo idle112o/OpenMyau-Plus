@@ -4,10 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.gui.inventory.GuiInventory;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
@@ -42,7 +38,7 @@ public class TargetHUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final DecimalFormat healthFormat = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
     private static final DecimalFormat diffFormat = new DecimalFormat("+0.0;-0.0", new DecimalFormatSymbols(Locale.US));
-    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"DEFAULT", "RAVENBS-MODERN", "RAVENBS-LEGACY", "FACE", "THREED", "SIMPLE", "CIRCLE"});
+    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"DEFAULT", "RAVENBS-MODERN", "RAVENBS-LEGACY"});
     public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"});
     public final ModeProperty posX = new ModeProperty("position-x", 1, new String[]{"LEFT", "MIDDLE", "RIGHT"});
     public final ModeProperty posY = new ModeProperty("position-y", 1, new String[]{"TOP", "MIDDLE", "BOTTOM"});
@@ -52,7 +48,7 @@ public class TargetHUD extends Module {
     public final PercentProperty background = new PercentProperty("background", 25, () -> this.style.getValue() == 0);
     public final BooleanProperty head = new BooleanProperty("head", true, () -> this.style.getValue() == 0);
     public final BooleanProperty indicator = new BooleanProperty("indicator", true, () -> this.style.getValue() == 0);
-    public final BooleanProperty outline = new BooleanProperty("outline", false, () -> this.style.getValue() == 0 || this.style.getValue() == 1 || this.style.getValue() >= 3);
+    public final BooleanProperty outline = new BooleanProperty("outline", false, () -> this.style.getValue() == 0 || this.style.getValue() == 1);
     public final BooleanProperty animations = new BooleanProperty("animations", true, () -> this.style.getValue() == 0);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true, () -> this.style.getValue() == 0);
     public final BooleanProperty kaOnly = new BooleanProperty("ka-only", true);
@@ -69,11 +65,6 @@ public class TargetHUD extends Module {
     private TimerUtil fadeTimer = null;
     private boolean fadingIn = false;
     private EntityLivingBase fadingEntity = null;
-    private float animatedHealth = 0f;
-    private float animatedArmor = 0f;
-    private float animatedScale = 0f;
-    private long damageFlashTime = 0;
-    private float lastHealthVal = 0f;
 
     public TargetHUD() {
         super("TargetHUD", false, true);
@@ -164,19 +155,11 @@ public class TargetHUD extends Module {
                 float abs = entity.getAbsorptionAmount() / 2.0F;
                 float heal = entity.getHealth() / 2.0F + abs;
 
-                float entityHealth = entity.getHealth();
-                if (entityHealth < this.lastHealthVal) {
-                    this.damageFlashTime = System.currentTimeMillis();
-                }
-                this.lastHealthVal = entityHealth;
-
                 if (entity != this.target) {
                     this.headTexture = null;
                     this.animTimer.setTime();
                     this.oldHealth = heal;
                     this.newHealth = heal;
-                    this.animatedHealth = entityHealth;
-                    this.animatedArmor = entity instanceof EntityPlayer ? ((EntityPlayer) entity).getTotalArmorValue() : 0;
                 }
                 if (!this.animations.getValue() || this.animTimer.hasTimeElapsed(150L)) {
                     this.oldHealth = this.newHealth;
@@ -186,22 +169,6 @@ public class TargetHUD extends Module {
                         this.animTimer.reset();
                     }
                 }
-
-                float targetHealthVal = entityHealth;
-                if (this.animatedHealth == 0f || entity == mc.thePlayer) this.animatedHealth = targetHealthVal;
-                this.animatedHealth = this.animatedHealth + (targetHealthVal - this.animatedHealth) * 0.1f;
-
-                int targetArmor = entity instanceof EntityPlayer ? ((EntityPlayer) entity).getTotalArmorValue() : 0;
-                if (this.animatedArmor == 0f || entity == mc.thePlayer) this.animatedArmor = targetArmor;
-                this.animatedArmor = this.animatedArmor + ((float) targetArmor - this.animatedArmor) * 0.1f;
-
-                if (fadeTimer != null) {
-                    long elapsed = fadeTimer.getElapsedTime();
-                    this.animatedScale = fadingIn ? Math.min(1f, elapsed / 400f) : Math.max(0f, 1f - elapsed / 400f);
-                } else {
-                    this.animatedScale = this.target != null ? 1f : 0f;
-                }
-
                 ResourceLocation resourceLocation = this.getSkin(entity);
                 if (resourceLocation != null) {
                     this.headTexture = resourceLocation;
@@ -210,10 +177,8 @@ public class TargetHUD extends Module {
                 int styleMode = this.style.getValue();
                 if (styleMode == 0) {
                     drawDefaultStyle(entity, health, abs, heal);
-                } else if (styleMode <= 2) {
-                    drawRavenBSStyle(styleMode - 1, entity, health, abs, heal);
                 } else {
-                    drawRavenStyle(styleMode - 3, entity);
+                    drawRavenBSStyle(styleMode - 1, entity, health, abs, heal);
                 }
             }
         }
@@ -351,13 +316,17 @@ public class TargetHUD extends Module {
             case 0:
                 float bloomRadius = (fadeTimer == null) ? 2f : (2f * alpha / 255f);
                 float blurRadius = (fadeTimer == null) ? 3 : (3f * alpha / 255f);
-                if (RenderFixes.shouldUseShaders()) {
-                    BlurUtils.prepareBloom();
-                    RoundedUtils.drawRound((float) n6, (float) n7, (float) (n8 - n6), (float) (n9 + 13 - n7), 8.0f, true, new Color(0, 0, 0, maxAlphaBackground));
-                    BlurUtils.bloomEnd(3, bloomRadius);
-                    BlurUtils.prepareBlur();
-                    RoundedUtils.drawRound((float) n6, (float) n7, (float) (n8 - n6), (float) (n9 + 13 - n7), 8.0f, true, new Color(RenderUtil.mergeAlpha(Color.black.getRGB(), maxAlphaOutline)));
-                    BlurUtils.blurEnd(2, blurRadius);
+                if (RenderFixes.shouldUseHudShaders()) {
+                    if (RenderFixes.shouldUseHudBloom()) {
+                        BlurUtils.prepareBloom();
+                        RoundedUtils.drawRound((float) n6, (float) n7, (float) (n8 - n6), (float) (n9 + 13 - n7), 8.0f, true, new Color(0, 0, 0, maxAlphaBackground));
+                        BlurUtils.bloomEnd(3, bloomRadius);
+                    }
+                    if (RenderFixes.shouldUseHudBlur()) {
+                        BlurUtils.prepareBlur();
+                        RoundedUtils.drawRound((float) n6, (float) n7, (float) (n8 - n6), (float) (n9 + 13 - n7), 8.0f, true, new Color(RenderUtil.mergeAlpha(Color.black.getRGB(), maxAlphaOutline)));
+                        BlurUtils.blurEnd(2, blurRadius);
+                    }
                 } else {
                     RenderUtil.drawRoundedRect((float) n6, (float) n7, (float) (n8 - n6), (float) (n9 + 13 - n7), 8.0f,
                             RenderUtil.mergeAlpha(Color.black.getRGB(), maxAlphaOutline), true, true, true, true);
@@ -416,342 +385,6 @@ public class TargetHUD extends Module {
         mc.fontRendererObj.drawString(playerInfo, (float) x, (float) y,
                 (new Color(220, 220, 220, 255).getRGB() & 0xFFFFFF) | Math.min(alpha + 15, 255) << 24, true);
         GL11.glDisable(GL11.GL_BLEND);
-        GL11.glPopMatrix();
-    }
-
-    private void drawRavenStyle(int mode, EntityLivingBase entity) {
-        switch (mode) {
-            case 0:
-                drawFaceStyle(entity);
-                break;
-            case 1:
-                draw3DStyle(entity);
-                break;
-            case 2:
-                drawSimpleStyle(entity);
-                break;
-            case 3:
-                drawCircleStyle(entity);
-                break;
-        }
-    }
-
-    private void drawFaceStyle(EntityLivingBase entity) {
-        float alpha = Math.min(1f, this.animatedScale);
-        int baseX = HUD.targetHUDX;
-        int baseY = HUD.targetHUDY;
-        int hudWidth = 150;
-        int hudHeight = 50;
-
-        float sc = this.scale.getValue();
-        GL11.glPushMatrix();
-        GL11.glTranslated(baseX + hudWidth / 2.0, baseY + hudHeight / 2.0, 0);
-        GL11.glScalef(sc, sc, 1.0f);
-        GL11.glTranslated(-(baseX + hudWidth / 2.0), -(baseY + hudHeight / 2.0), 0);
-
-        int x = baseX;
-        int y = baseY;
-
-        long timeSinceDamage = System.currentTimeMillis() - this.damageFlashTime;
-        float flashAlpha = 0f;
-        if (timeSinceDamage < 300) {
-            flashAlpha = 1f - (timeSinceDamage / 300f);
-        }
-
-        int bgBase = new Color(26, 26, 26, (int)(alpha * 128)).getRGB();
-        if (flashAlpha > 0) {
-            int r = (int) (26 + (255 - 26) * flashAlpha);
-            int g = (int) (26 * (1 - flashAlpha));
-            int b = (int) (26 * (1 - flashAlpha));
-            bgBase = new Color(r, g, b, (int)(alpha * 128)).getRGB();
-        }
-        RenderUtil.drawRoundedRect((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, bgBase);
-
-        int borderColor = (int) (alpha * 0xFF) << 24 | 0xFF8C00;
-        if (flashAlpha > 0) {
-            borderColor = (int) (alpha * 0xFF) << 24 | 0xFF0000;
-        }
-        if (this.outline.getValue()) {
-            RenderUtil.drawRoundedRectOutline((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, 2.0f, borderColor, true, true, true, true);
-        }
-
-        GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-        if (this.headTexture != null) {
-            mc.getTextureManager().bindTexture(this.headTexture);
-            Gui.drawScaledCustomSizeModalRect(x + 5, y + 5, 8.0F, 8.0F, 8, 8, 30, 30, 64.0F, 64.0F);
-        }
-
-        String targetName = TeamUtil.stripName(entity);
-        int nameColor = (int) (alpha * 0xFF) << 24 | 0xFFFFFF;
-        mc.fontRendererObj.drawString(targetName, x + 40, y + 8, nameColor, true);
-
-        float maxHealth = entity.getMaxHealth();
-        float healthPercent = Math.min(1f, this.animatedHealth / maxHealth);
-
-        int healthBarY = y + 25;
-        int healthBarWidth = hudWidth - 45;
-
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) healthBarY, (float) healthBarWidth, 8.0f, 4.0f,
-                (int) (alpha * 0x40) << 24 | 0x404040);
-
-        int healthColor = healthPercent > 0.5f ? 0xFF00FF00 : (healthPercent > 0.25f ? 0xFFFFFF00 : 0xFFFF0000);
-        int healthFillColor = (int) (alpha * 0xFF) << 24 | healthColor;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) healthBarY,
-                (float) (int) (healthBarWidth * healthPercent), 8.0f, 4.0f, healthFillColor);
-
-        float armorPercent = Math.min(1f, this.animatedArmor / 20f);
-        int armorBarY = healthBarY + 10;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) armorBarY, (float) healthBarWidth, 4.0f, 2.0f,
-                (int) (alpha * 0x40) << 24 | 0x404040);
-
-        int armorFillColor = (int) (alpha * 0xFF) << 24 | 0x00BFFF;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) armorBarY,
-                (float) (int) (healthBarWidth * armorPercent), 4.0f, 2.0f, armorFillColor);
-
-        String healthText = String.format("%.1f/%.1f", this.animatedHealth, maxHealth);
-        int healthTextColor = (int) (alpha * 0xFF) << 24 | 0xCCCCCC;
-        mc.fontRendererObj.drawString(healthText, x + 40, y + 15, healthTextColor, true);
-
-        GL11.glPopMatrix();
-    }
-
-    private void draw3DStyle(EntityLivingBase entity) {
-        float alpha = Math.min(1f, this.animatedScale);
-        int baseX = HUD.targetHUDX;
-        int baseY = HUD.targetHUDY;
-        int hudWidth = 150;
-        int hudHeight = 50;
-
-        float sc = this.scale.getValue();
-        GL11.glPushMatrix();
-        GL11.glTranslated(baseX + hudWidth / 2.0, baseY + hudHeight / 2.0, 0);
-        GL11.glScalef(sc, sc, 1.0f);
-        GL11.glTranslated(-(baseX + hudWidth / 2.0), -(baseY + hudHeight / 2.0), 0);
-
-        int x = baseX;
-        int y = baseY;
-
-        long timeSinceDamage = System.currentTimeMillis() - this.damageFlashTime;
-        float flashAlpha = 0f;
-        if (timeSinceDamage < 300) {
-            flashAlpha = 1f - (timeSinceDamage / 300f);
-        }
-
-        int bgBase = new Color(26, 26, 26, (int)(alpha * 128)).getRGB();
-        if (flashAlpha > 0) {
-            int r = (int) (26 + (255 - 26) * flashAlpha);
-            int g = (int) (26 * (1 - flashAlpha));
-            int b = (int) (26 * (1 - flashAlpha));
-            bgBase = new Color(r, g, b, (int)(alpha * 128)).getRGB();
-        }
-        RenderUtil.drawRoundedRect((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, bgBase);
-
-        int borderColor = (int) (alpha * 0xFF) << 24 | 0xFF8C00;
-        if (flashAlpha > 0) {
-            borderColor = (int) (alpha * 0xFF) << 24 | 0xFF0000;
-        }
-        if (this.outline.getValue()) {
-            RenderUtil.drawRoundedRectOutline((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, 2.0f, borderColor, true, true, true, true);
-        }
-
-        if (this.animatedScale > 0.5f && entity instanceof EntityPlayer) {
-            try {
-                GlStateManager.color(1f, 1f, 1f, alpha);
-                GuiInventory.drawEntityOnScreen(x + 20, y + 34, 14, 0, 0, (EntityPlayer) entity);
-            } catch (Exception ignored) {}
-        } else if (this.headTexture != null) {
-            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-            mc.getTextureManager().bindTexture(this.headTexture);
-            Gui.drawScaledCustomSizeModalRect(x + 5, y + 8, 8.0F, 8.0F, 8, 8, 24, 24, 64.0F, 64.0F);
-        }
-
-        String targetName = TeamUtil.stripName(entity);
-        int nameColor = (int) (alpha * 0xFF) << 24 | 0xFFFFFF;
-        mc.fontRendererObj.drawString(targetName, x + 40, y + 8, nameColor, true);
-
-        float maxHealth = entity.getMaxHealth();
-        float healthPercent = Math.min(1f, this.animatedHealth / maxHealth);
-
-        int healthBarY = y + 25;
-        int healthBarWidth = hudWidth - 45;
-
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) healthBarY, (float) healthBarWidth, 8.0f, 4.0f,
-                (int) (alpha * 0x40) << 24 | 0x404040);
-
-        int healthColor = healthPercent > 0.5f ? 0xFF00FF00 : (healthPercent > 0.25f ? 0xFFFFFF00 : 0xFFFF0000);
-        int healthFillColor = (int) (alpha * 0xFF) << 24 | healthColor;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) healthBarY,
-                (float) (int) (healthBarWidth * healthPercent), 8.0f, 4.0f, healthFillColor);
-
-        float armorPercent = Math.min(1f, this.animatedArmor / 20f);
-        int armorBarY = healthBarY + 10;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) armorBarY, (float) healthBarWidth, 4.0f, 2.0f,
-                (int) (alpha * 0x40) << 24 | 0x404040);
-
-        int armorFillColor = (int) (alpha * 0xFF) << 24 | 0x00BFFF;
-        RenderUtil.drawRoundedRect((float) (x + 40), (float) armorBarY,
-                (float) (int) (healthBarWidth * armorPercent), 4.0f, 2.0f, armorFillColor);
-
-        String healthText = String.format("%.1f/%.1f", this.animatedHealth, maxHealth);
-        int healthTextColor = (int) (alpha * 0xFF) << 24 | 0xCCCCCC;
-        mc.fontRendererObj.drawString(healthText, x + 40, y + 15, healthTextColor, true);
-
-        GL11.glPopMatrix();
-    }
-
-    private void drawSimpleStyle(EntityLivingBase entity) {
-        float alpha = Math.min(1f, this.animatedScale);
-        int baseX = HUD.targetHUDX;
-        int baseY = HUD.targetHUDY;
-        int hudWidth = 130;
-        int hudHeight = 32;
-
-        float sc = this.scale.getValue();
-        GL11.glPushMatrix();
-        GL11.glTranslated(baseX + hudWidth / 2.0, baseY + hudHeight / 2.0, 0);
-        GL11.glScalef(sc, sc, 1.0f);
-        GL11.glTranslated(-(baseX + hudWidth / 2.0), -(baseY + hudHeight / 2.0), 0);
-
-        int x = baseX;
-        int y = baseY;
-
-        long timeSinceDamage = System.currentTimeMillis() - this.damageFlashTime;
-        float flashAlpha = 0f;
-        if (timeSinceDamage < 300) {
-            flashAlpha = 1f - (timeSinceDamage / 300f);
-        }
-
-        int bgBase = new Color(26, 26, 26, (int)(alpha * 128)).getRGB();
-        if (flashAlpha > 0) {
-            int r = (int) (26 + (255 - 26) * flashAlpha);
-            int g = (int) (26 * (1 - flashAlpha));
-            int b = (int) (26 * (1 - flashAlpha));
-            bgBase = new Color(r, g, b, (int)(alpha * 128)).getRGB();
-        }
-        RenderUtil.drawRoundedRect((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, bgBase);
-
-        int borderColor = (int) (alpha * 0xFF) << 24 | 0xFF8C00;
-        if (flashAlpha > 0) {
-            borderColor = (int) (alpha * 0xFF) << 24 | 0xFF0000;
-        }
-        if (this.outline.getValue()) {
-            RenderUtil.drawRoundedRectOutline((float) x, (float) y, (float) hudWidth, (float) hudHeight, 8.0f, 2.0f, borderColor, true, true, true, true);
-        }
-
-        String targetName = TeamUtil.stripName(entity);
-        int nameColor = (int) (alpha * 0xFF) << 24 | 0xFFFFFF;
-        mc.fontRendererObj.drawString(targetName, x + 5, y + 5, nameColor, true);
-
-        float maxHealth = entity.getMaxHealth();
-        float healthPercent = Math.min(1f, this.animatedHealth / maxHealth);
-
-        int healthBarY = y + 19;
-        int healthBarWidth = hudWidth - 10;
-
-        RenderUtil.drawRoundedRect((float) (x + 5), (float) healthBarY, (float) healthBarWidth, 8.0f, 4.0f,
-                (int) (alpha * 0x40) << 24 | 0x404040);
-
-        int healthColor = healthPercent > 0.5f ? 0xFF00FF00 : (healthPercent > 0.25f ? 0xFFFFFF00 : 0xFFFF0000);
-        int healthFillColor = (int) (alpha * 0xFF) << 24 | healthColor;
-        RenderUtil.drawRoundedRect((float) (x + 5), (float) healthBarY,
-                (float) (int) (healthBarWidth * healthPercent), 8.0f, 4.0f, healthFillColor);
-
-        int actualHealthInt = Math.round(this.animatedHealth);
-        String healthText = String.format("%d/%d", actualHealthInt, (int) maxHealth);
-        int healthTextColor = (int) (alpha * 0xFF) << 24 | 0xCCCCCC;
-        double healthTextWidth = mc.fontRendererObj.getStringWidth(healthText);
-        mc.fontRendererObj.drawString(healthText, (int) (x + hudWidth - 5 - healthTextWidth), y + 5, healthTextColor, true);
-
-        GL11.glPopMatrix();
-    }
-
-    private void drawCircleStyle(EntityLivingBase entity) {
-        float alpha = Math.min(1f, this.animatedScale);
-        int baseX = HUD.targetHUDX;
-        int baseY = HUD.targetHUDY;
-
-        float sc = this.scale.getValue();
-        GL11.glPushMatrix();
-        GL11.glTranslated(baseX, baseY, 0);
-        GL11.glScalef(sc, sc, 1.0f);
-        GL11.glTranslated(-baseX, -baseY, 0);
-
-        int x = baseX;
-        int y = baseY;
-
-        int circleX = x + 20;
-        int circleY = y + 20;
-        int radius = 15;
-        int segments = 48;
-
-        if (this.headTexture != null) {
-            mc.getTextureManager().bindTexture(this.headTexture);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
-            Tessellator tessellator = Tessellator.getInstance();
-            WorldRenderer worldrenderer = tessellator.getWorldRenderer();
-            worldrenderer.begin(GL11.GL_TRIANGLE_FAN, DefaultVertexFormats.POSITION_TEX);
-            worldrenderer.pos(circleX, circleY, 0).tex(12.0 / 64.0, 12.0 / 64.0).endVertex();
-            for (int i = 0; i <= segments; i++) {
-                double a = Math.toRadians(360.0 * i / segments);
-                double tx = (12.0 + 4.0 * Math.cos(a)) / 64.0;
-                double ty = (12.0 + 4.0 * Math.sin(a)) / 64.0;
-                worldrenderer.pos(circleX + radius * Math.cos(a), circleY + radius * Math.sin(a), 0).tex(tx, ty).endVertex();
-            }
-            tessellator.draw();
-        }
-
-        float maxHealth = entity.getMaxHealth();
-        float healthPercent = Math.min(1f, entity.getHealth() / maxHealth);
-        int armor = entity instanceof EntityPlayer ? ((EntityPlayer) entity).getTotalArmorValue() : 0;
-        float armorPercent = Math.min(1f, armor / 20f);
-
-        float healthArc = healthPercent * 180f;
-        float armorArc = armorPercent * 180f;
-
-        int innerR = radius + 1;
-        int outerR = radius + 4;
-        int arcSeg = 30;
-
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-
-        Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
-
-        if (healthArc > 0) {
-            GL11.glColor4f(1, 0, 0, alpha);
-            worldrenderer.begin(GL11.GL_TRIANGLE_STRIP, DefaultVertexFormats.POSITION);
-            for (int i = 0; i <= arcSeg; i++) {
-                double a = Math.toRadians(-90 + healthArc * i / arcSeg);
-                worldrenderer.pos(circleX + outerR * Math.cos(a), circleY + outerR * Math.sin(a), 0).endVertex();
-                worldrenderer.pos(circleX + innerR * Math.cos(a), circleY + innerR * Math.sin(a), 0).endVertex();
-            }
-            tessellator.draw();
-        }
-
-        if (armorArc > 0) {
-            GL11.glColor4f(0, 0.75f, 1, alpha);
-            worldrenderer.begin(GL11.GL_TRIANGLE_STRIP, DefaultVertexFormats.POSITION);
-            for (int i = 0; i <= arcSeg; i++) {
-                double a = Math.toRadians(90 + armorArc * i / arcSeg);
-                worldrenderer.pos(circleX + outerR * Math.cos(a), circleY + outerR * Math.sin(a), 0).endVertex();
-                worldrenderer.pos(circleX + innerR * Math.cos(a), circleY + innerR * Math.sin(a), 0).endVertex();
-            }
-            tessellator.draw();
-        }
-
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_BLEND);
-
-        String targetName = TeamUtil.stripName(entity);
-        int nameColor = (int) (alpha * 0xFF) << 24 | 0xFFFFFF;
-        mc.fontRendererObj.drawString(targetName, x + 40, y + 8, nameColor, true);
-
-        String healthText = String.format("%.1f/%.1f", this.animatedHealth, maxHealth);
-        int healthTextColor = (int) (alpha * 0xFF) << 24 | 0xCCCCCC;
-        mc.fontRendererObj.drawString(healthText, x + 40, y + 22, healthTextColor, true);
-
         GL11.glPopMatrix();
     }
 

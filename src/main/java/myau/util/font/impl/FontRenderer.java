@@ -24,6 +24,7 @@ public class FontRenderer extends CharRenderer implements IFont {
     public FontRenderer(Font font) {
         super(font, true, true);
         this.setupMinecraftColorcodes();
+        this.setupBoldItalicIDs();
         FontResourceManager.registerFont(this);
     }
 
@@ -197,16 +198,19 @@ public class FontRenderer extends CharRenderer implements IFont {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
+        this.setupBoldItalicIDs();
     }
 
     @Override
     public void setAntiAlias(boolean antiAlias) {
         super.setAntiAlias(antiAlias);
+        this.setupBoldItalicIDs();
     }
 
     @Override
     public void setFractionalMetrics(boolean fractionalMetrics) {
         super.setFractionalMetrics(fractionalMetrics);
+        this.setupBoldItalicIDs();
     }
 
     private void setupBoldItalicIDs() {

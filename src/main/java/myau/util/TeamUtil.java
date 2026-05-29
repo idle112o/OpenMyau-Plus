@@ -8,14 +8,23 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemArmor;
+import net.minecraft.item.ItemStack;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 
 import java.awt.*;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class TeamUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final Map<UUID, ItemStack[]> matrixArmorSnapshots = new HashMap<>();
+    private static final Set<UUID> matrixBots = new HashSet<>();
 
     public static boolean isEntityLoaded(Entity entity) {
         if (entity == null) return false;
@@ -64,6 +73,9 @@ public class TeamUtil {
         if (playerInfo == null) {
             return true;
         }
+        if (isMatrixBot(player, playerInfo)) {
+            return true;
+        }
         if (!ServerUtil.isHypixel()) return false;
         if (player.getName().startsWith("§k")) {
             return player.isInvisible();
@@ -75,6 +87,86 @@ public class TeamUtil {
         if (playerTeam == null) return false;
         if (!playerTeam.getTeamName().isEmpty()) return false;
         return playerTeam.getColorPrefix().equals("§c");
+    }
+
+    private static boolean isMatrixBot(EntityPlayer player, NetworkPlayerInfo playerInfo) {
+        UUID uuid = player.getUniqueID();
+        if (matrixBots.contains(uuid)) {
+            return true;
+        }
+
+        if (playerInfo.getResponseTime() >= 2) {
+            matrixArmorSnapshots.remove(uuid);
+            return false;
+        }
+
+        if (isMatrixOrbitBot(player) || isFullyEnchantedArmored(player)) {
+            matrixBots.add(uuid);
+            matrixArmorSnapshots.remove(uuid);
+            return true;
+        }
+
+        ItemStack[] previousArmor = matrixArmorSnapshots.get(uuid);
+        ItemStack[] currentArmor = copyArmor(player);
+        if (previousArmor == null) {
+            matrixArmorSnapshots.put(uuid, currentArmor);
+            return false;
+        }
+
+        if (hasArmorChanged(previousArmor, currentArmor)) {
+            matrixBots.add(uuid);
+            matrixArmorSnapshots.remove(uuid);
+            return true;
+        }
+
+        matrixArmorSnapshots.put(uuid, currentArmor);
+        return false;
+    }
+
+    private static boolean isMatrixOrbitBot(EntityPlayer player) {
+        if (mc.thePlayer == null) {
+            return false;
+        }
+
+        double distance = player.getDistanceToEntity(mc.thePlayer);
+        double heightDiff = Math.abs(player.posY - mc.thePlayer.posY);
+
+        return distance <= 4.5D
+                && heightDiff >= 0.35D
+                && !player.onGround
+                && player.ticksExisted <= 100;
+    }
+
+    private static boolean isFullyEnchantedArmored(EntityPlayer player) {
+        for (ItemStack stack : player.inventory.armorInventory) {
+            if (stack == null || !(stack.getItem() instanceof ItemArmor) || !stack.isItemEnchanted()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static ItemStack[] copyArmor(EntityPlayer player) {
+        ItemStack[] copy = new ItemStack[player.inventory.armorInventory.length];
+        for (int i = 0; i < copy.length; i++) {
+            ItemStack stack = player.inventory.armorInventory[i];
+            copy[i] = stack == null ? null : stack.copy();
+        }
+        return copy;
+    }
+
+    private static boolean hasArmorChanged(ItemStack[] oldArmor, ItemStack[] newArmor) {
+        if (oldArmor.length != newArmor.length) {
+            return true;
+        }
+
+        for (int i = 0; i < oldArmor.length; i++) {
+            if (!ItemStack.areItemStacksEqual(oldArmor[i], newArmor[i])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static boolean isSameTeam(EntityPlayer player) {

@@ -51,7 +51,6 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(Refill.class),
                 Myau.moduleManager.getModule(HitSelect.class),
                 Myau.moduleManager.getModule(BackTrack.class),
-                Myau.moduleManager.getModule(Hitflick.class),
                 Myau.moduleManager.getModule(TimerRangev999.class),
                 Myau.moduleManager.getModule(ClickAssits.class),
                 Myau.moduleManager.getModule(Criticals.class),
@@ -127,8 +126,7 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(AntiDebuff.class),
                 Myau.moduleManager.getModule(FlagDetector.class),
                 Myau.moduleManager.getModule(AutoGapple.class),
-                Myau.moduleManager.getModule(ThrowAura.class),
-                Myau.moduleManager.getModule(PacketConsume.class)
+                Myau.moduleManager.getModule(ThrowAura.class)
         );
 
         List<Module> miscModules = Arrays.asList(
