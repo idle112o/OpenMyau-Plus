@@ -63,6 +63,9 @@ public class TeamUtil {
         if (myau.module.modules.AntiBot.isBot(player)) {
             return true;
         }
+        if (!myau.module.modules.AntiBot.isBasicEnabled()) {
+            return false;
+        }
         NetworkPlayerInfo playerInfo = mc.getNetHandler().getPlayerInfo(player.getName());
         if (playerInfo == null) {
             return true;

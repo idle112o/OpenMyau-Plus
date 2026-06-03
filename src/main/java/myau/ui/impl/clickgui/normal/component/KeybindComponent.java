@@ -18,6 +18,10 @@ public class KeybindComponent extends Component {
         this.binding = false;
     }
 
+    public boolean isBinding() {
+        return binding;
+    }
+
     @Override
     public void render(int mouseX, int mouseY, float partialTicks, float animationProgress, boolean isLast, int scrollOffset, float deltaTime) {
         int scrolledY = y - scrollOffset;

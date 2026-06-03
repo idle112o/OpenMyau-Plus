@@ -18,6 +18,8 @@ import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemArmor;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S0BPacketAnimation;
 import net.minecraft.network.play.server.S0CPacketSpawnPlayer;
@@ -38,6 +40,7 @@ import java.util.UUID;
 public class AntiBot extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
+    public final BooleanProperty basic = new BooleanProperty("Basic", true);
     public final BooleanProperty matrixBot = new BooleanProperty("MatrixBot", false);
     public final BooleanProperty tab = new BooleanProperty("Tab", true);
     public final ModeProperty tabMode = new ModeProperty("TabMode", 1, new String[]{"Equals", "Contains"}, tab::getValue);
@@ -81,11 +84,9 @@ public class AntiBot extends Module {
     private final Set<Integer> spawnedInCombat = new HashSet<>();
     private final Set<Integer> hit = new HashSet<>();
     private final Set<UUID> duplicate = new HashSet<>();
-    private final List<EntityPlayer> matrixPlayerList = new ArrayList<>();
-    private final List<EntityPlayer> matrixNotAlwaysInRadius = new ArrayList<>();
-    private final Map<EntityPlayer, Double> matrixX = new HashMap<>();
-    private final Map<EntityPlayer, Double> matrixZ = new HashMap<>();
-    private boolean matrixNext;
+    private final Map<EntityPlayer, double[]> matrixSamples = new HashMap<>();
+    private final Set<EntityPlayer> matrixNotAlwaysInRadius = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private boolean matrixCollectSample;
 
     public AntiBot() {
         super("AntiBot", true, true);
@@ -136,56 +137,70 @@ public class AntiBot extends Module {
         if (!matrixBot.getValue()) return;
 
         if (matrixNotAlwaysInRadius.size() > 1000) matrixNotAlwaysInRadius.clear();
+        matrixSamples.keySet().removeIf(player -> !mc.theWorld.loadedEntityList.contains(player) || matrixNotAlwaysInRadius.contains(player));
 
         for (Entity entity : mc.theWorld.loadedEntityList) {
-            if (entity instanceof EntityPlayer
-                    && (mc.thePlayer.getDistanceToEntity(entity) > 10.0F || !within(entity.posY, mc.thePlayer.posY - 1.5, mc.thePlayer.posY + 1.5))
-                    && !matrixNotAlwaysInRadius.contains(entity)) {
-                matrixNotAlwaysInRadius.add((EntityPlayer) entity);
+            if (!(entity instanceof EntityPlayer) || entity == mc.thePlayer) continue;
+
+            EntityPlayer player = (EntityPlayer) entity;
+            if (!isInMatrixCheckArea(player, 10.0F) && !matrixNotAlwaysInRadius.contains(player)) {
+                matrixNotAlwaysInRadius.add(player);
+                matrixSamples.remove(player);
             }
         }
 
-        if (!matrixNext) {
+        if (matrixCollectSample) {
+            matrixSamples.clear();
             for (Entity entity : mc.theWorld.loadedEntityList) {
-                if (!(entity instanceof EntityPlayer) || matrixNotAlwaysInRadius.contains(entity)) continue;
+                if (!(entity instanceof EntityPlayer) || entity == mc.thePlayer) continue;
 
                 EntityPlayer player = (EntityPlayer) entity;
-                matrixPlayerList.add(player);
-                matrixX.put(player, player.posX);
-                matrixZ.put(player, player.posZ);
+                if (matrixNotAlwaysInRadius.contains(player)) continue;
+
+                matrixSamples.put(player, new double[]{player.posX, player.posZ});
             }
         } else {
-            for (EntityPlayer player : matrixPlayerList) {
-                Double lastX = matrixX.get(player);
-                Double lastZ = matrixZ.get(player);
-                if (lastX == null || lastZ == null) continue;
+            List<EntityPlayer> bots = new ArrayList<>();
+            for (Map.Entry<EntityPlayer, double[]> entry : matrixSamples.entrySet()) {
+                EntityPlayer player = entry.getKey();
+                double[] sample = entry.getValue();
+                if (player == null || matrixNotAlwaysInRadius.contains(player) || !mc.theWorld.loadedEntityList.contains(player)) continue;
 
-                double xDiff = player.posX - lastX;
-                double zDiff = player.posZ - lastZ;
+                double xDiff = sample[0] - player.posX;
+                double zDiff = sample[1] - player.posZ;
                 double speed = Math.sqrt(xDiff * xDiff + zDiff * zDiff) * 10.0;
 
-                if (isMatrixBot(player, speed)) {
-                    mc.theWorld.removeEntity(player);
-                    if (debug.getValue()) {
-                        ChatUtil.sendFormatted(String.format("%sAntiBot/MatrixBot: &fRemoved &r%s&f.", Myau.clientName, player.getName()));
-                    }
-                }
+                if (isMatrixBot(player, speed)) bots.add(player);
             }
 
-            matrixPlayerList.clear();
-            matrixX.clear();
-            matrixZ.clear();
+            for (EntityPlayer bot : bots) {
+                mc.theWorld.removeEntity(bot);
+                matrixSamples.remove(bot);
+                if (debug.getValue()) {
+                    ChatUtil.sendFormatted(String.format("%sAntiBot/MatrixBot: &fRemoved &r%s&f. Speed: &b%.2f&f.", Myau.clientName, bot.getName(), getHorizontalSpeed(bot)));
+                }
+            }
         }
 
-        matrixNext = !matrixNext;
+        matrixCollectSample = !matrixCollectSample;
     }
 
     private boolean isMatrixBot(EntityPlayer player, double speed) {
         return player != mc.thePlayer
-                && speed > 6.75
-                && speed < 27.5
-                && mc.thePlayer.getDistanceToEntity(player) <= 5.5F
+                && !matrixNotAlwaysInRadius.contains(player)
+                && speed > 8.0
+                && isInMatrixCheckArea(player, 5.0F);
+    }
+
+    private boolean isInMatrixCheckArea(EntityPlayer player, float radius) {
+        return mc.thePlayer.getDistanceToEntity(player) <= radius
                 && within(player.posY, mc.thePlayer.posY - 1.5, mc.thePlayer.posY + 1.5);
+    }
+
+    private double getHorizontalSpeed(EntityPlayer player) {
+        double xDiff = player.posX - player.prevPosX;
+        double zDiff = player.posZ - player.prevPosZ;
+        return Math.sqrt(xDiff * xDiff + zDiff * zDiff) * 10.0;
     }
 
     private boolean within(double value, double min, double max) {
@@ -259,11 +274,9 @@ public class AntiBot extends Module {
         hasRemovedEntities.clear();
         spawnedInCombat.clear();
         duplicate.clear();
-        matrixPlayerList.clear();
+        matrixSamples.clear();
         matrixNotAlwaysInRadius.clear();
-        matrixX.clear();
-        matrixZ.clear();
-        matrixNext = false;
+        matrixCollectSample = true;
     }
 
     @Override
@@ -277,6 +290,9 @@ public class AntiBot extends Module {
 
         EntityPlayer player = (EntityPlayer) entity;
         int id = player.getEntityId();
+
+        if (matrixBot.getValue() && isInvalidMatrixBotArmor(player)) return true;
+        if (!basic.getValue()) return false;
 
         if (experimentalNPCDetection.getValue()) {
             String display = strip(player.getDisplayName().getUnformattedText()).toLowerCase(Locale.ROOT);
@@ -313,6 +329,17 @@ public class AntiBot extends Module {
                 && player.inventory.armorInventory[1] == null
                 && player.inventory.armorInventory[2] == null
                 && player.inventory.armorInventory[3] == null;
+    }
+
+    private boolean isInvalidMatrixBotArmor(EntityPlayer player) {
+        ItemStack helmet = player.inventory.armorInventory[3];
+        ItemStack chestplate = player.inventory.armorInventory[2];
+        if (helmet == null || chestplate == null) return true;
+        if (!(helmet.getItem() instanceof ItemArmor) || !(chestplate.getItem() instanceof ItemArmor)) return true;
+
+        int helmetColor = ((ItemArmor) helmet.getItem()).getColor(helmet);
+        int chestplateColor = ((ItemArmor) chestplate.getItem()).getColor(chestplate);
+        return !(chestplateColor > 0 && helmetColor > 0 && chestplateColor == helmetColor);
     }
 
     private boolean isInTab(EntityPlayer player) {
@@ -355,5 +382,10 @@ public class AntiBot extends Module {
     public static boolean isBot(EntityLivingBase entity) {
         AntiBot antiBot = (AntiBot) Myau.moduleManager.getModule(AntiBot.class);
         return antiBot != null && antiBot.isEnabled() && antiBot.isBotPlayer(entity);
+    }
+
+    public static boolean isBasicEnabled() {
+        AntiBot antiBot = (AntiBot) Myau.moduleManager.getModule(AntiBot.class);
+        return antiBot != null && antiBot.isEnabled() && antiBot.basic.getValue();
     }
 }

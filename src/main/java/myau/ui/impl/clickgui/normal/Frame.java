@@ -59,6 +59,10 @@ public class Frame extends Component {
         return false;
     }
 
+    public float getCurrentHeight() {
+        return currentHeight;
+    }
+
     @Override
     public void render(int mouseX, int mouseY, float partialTicks, float animationProgress, boolean isLast, int scrollOffset, float deltaTime) {
         float headerHeight = this.height;

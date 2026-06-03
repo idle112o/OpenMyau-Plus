@@ -85,6 +85,10 @@ public class AnimationUtil {
         Easing(Function<Double, Double> function) {
             this.function = function;
         }
+
+        public Function<Double, Double> getFunction() {
+            return function;
+        }
     }
 
 }

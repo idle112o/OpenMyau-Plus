@@ -38,6 +38,10 @@ public class Slider extends Component {
         this.dragging = false;
     }
 
+    public Property getProperty() {
+        return property;
+    }
+
     @Override
     public void render(int mouseX, int mouseY, float partialTicks, float animationProgress, boolean isLast, int scrollOffset, float deltaTime) {
         if (!property.isVisible()) return;

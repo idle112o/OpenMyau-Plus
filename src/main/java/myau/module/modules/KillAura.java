@@ -66,6 +66,7 @@ public class KillAura extends Module {
     public final ModeProperty autoBlock;
     public final BooleanProperty autoBlockRequirePress;
     public final FloatProperty autoBlockCPS;
+    public final IntProperty reBlockDelay;
     public final FloatProperty autoBlockRange;
     public final FloatProperty swingRange;
     public final FloatProperty attackRange;
@@ -94,7 +95,6 @@ public class KillAura extends Module {
     public final BooleanProperty weaponsOnly;
     public final BooleanProperty allowTools;
     public final BooleanProperty inventoryCheck;
-    public final BooleanProperty botCheck;
     public final BooleanProperty players;
     public final BooleanProperty bosses;
     public final BooleanProperty mobs;
@@ -146,9 +146,10 @@ public class KillAura extends Module {
 
         this.mode = new ModeProperty("Mode", 1, new String[]{"Single", "Switch"});
         this.sort = new ModeProperty("Sort", 1, new String[]{"Distance", "Health", "HurtTime", "FOV"});
-        this.autoBlock = new ModeProperty("auto-block", 3, new String[]{"NONE", "VANILLA", "SPOOF", "HYPIXEL", "BLINK", "INTERACT", "SWAP", "LEGIT", "FAKE"});
+        this.autoBlock = new ModeProperty("auto-block", 3, new String[]{"NONE", "VANILLA", "SPOOF", "HYPIXEL", "BLINK", "INTERACT", "SWAP", "LEGIT", "FAKE", "REBLOCK"});
         this.autoBlockCPS = new FloatProperty("AutoBlockCPS", 8.0F, 1.0F, 10.0F);
         this.autoBlockRequirePress = new BooleanProperty("AutoBlockRequirePress", false);
+        this.reBlockDelay = new IntProperty("ReBlockDelay", 10, 1, 100, () -> autoBlock.getValue() == 9);
         this.autoBlockRange = new FloatProperty("AutoBlockRange", 6.0F, 3.0F, 8.0F);
         this.swingRange = new FloatProperty("SwingRange", 3.5F, 3.0F, 6.0F);
         this.attackRange = new FloatProperty("AttackRange", 3.0F, 3.0F, 6.0F);
@@ -180,7 +181,6 @@ public class KillAura extends Module {
         this.weaponsOnly = new BooleanProperty("WeaponsOnly", true);
         this.allowTools = new BooleanProperty("AllowTools", false, this.weaponsOnly::getValue);
         this.inventoryCheck = new BooleanProperty("InventoryCheck", true);
-        this.botCheck = new BooleanProperty("BotCheck", true);
         this.players = new BooleanProperty("Players", true);
         this.bosses = new BooleanProperty("Bosses", false);
         this.mobs = new BooleanProperty("Mobs", false);
@@ -298,6 +298,20 @@ public class KillAura extends Module {
         this.blockingState = false;
     }
 
+    private void updateReBlock() {
+        if (this.blockingState) {
+            this.blockTick++;
+            if (this.blockTick >= this.reBlockDelay.getValue() && this.blockTick < this.reBlockDelay.getValue() + 12) {
+                this.stopBlock();
+            }
+            if (this.blockTick >= this.reBlockDelay.getValue() + 10) {
+                this.blockTick = 0;
+            }
+        } else if (this.blockTick > 0) {
+            this.blockTick = 0;
+        }
+    }
+
     private void interactAttack(float yaw, float pitch) {
         if (this.target != null) {
             MovingObjectPosition mop = RotationUtil.rayTrace(this.target.getBox(), yaw, pitch, 8.0);
@@ -386,7 +400,7 @@ public class KillAura extends Module {
                 } else if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
                     return false;
                 } else {
-                    return !isTeam((EntityPlayer) entityLivingBase) && (!this.botCheck.getValue() || !TeamUtil.isBot((EntityPlayer) entityLivingBase));
+                    return !isTeam((EntityPlayer) entityLivingBase) && !TeamUtil.isBot((EntityPlayer) entityLivingBase);
                 }
             } else if (entityLivingBase instanceof EntityDragon || entityLivingBase instanceof EntityWither) {
                 return this.bosses.getValue();
@@ -831,6 +845,34 @@ public class KillAura extends Module {
                                 if (PlayerUtil.isUsingItem() && !this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
                                     swap = true;
                                 }
+                                break;
+                            case 9:
+                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+                                if (this.hasValidTarget()) {
+                                    if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
+                                        swap = true;
+                                    }
+                                    this.updateReBlock();
+                                    this.isBlocking = true;
+                                    this.fakeBlockState = false;
+                                } else {
+                                    this.isBlocking = false;
+                                    this.fakeBlockState = false;
+                                    this.blockTick = 0;
+                                }
+                                break;
+                            case 10:
+                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+                                if (this.hasValidTarget()) {
+                                    if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
+                                        swap = true;
+                                    }
+                                    this.isBlocking = true;
+                                    this.fakeBlockState = false;
+                                } else {
+                                    this.isBlocking = false;
+                                    this.fakeBlockState = false;
+                                }
                         }
                     }
                     boolean attacked = false;
@@ -1197,6 +1239,7 @@ public class KillAura extends Module {
                     mc.thePlayer.stopUsingItem();
                 }
             }
+
             if (this.debugLog.isSelected("Health") && this.isAttackAllowed()) {
                 if (event.getPacket() instanceof S06PacketUpdateHealth) {
                     float packet = ((S06PacketUpdateHealth) event.getPacket()).getHealth() - mc.thePlayer.getHealth();
@@ -1404,6 +1447,30 @@ public class KillAura extends Module {
             this.entity = entityLivingBase;
             this.killAura = killAura;
             update();
+        }
+
+        public EntityLivingBase getEntity() {
+            return entity;
+        }
+
+        public KillAura getKillAura() {
+            return killAura;
+        }
+
+        public AxisAlignedBB getBox() {
+            return box;
+        }
+
+        public double getX() {
+            return x;
+        }
+
+        public double getY() {
+            return y;
+        }
+
+        public double getZ() {
+            return z;
         }
 
         public void update() {
