@@ -438,7 +438,6 @@ public class HUD extends Module {
             GlStateManager.pushMatrix();
             GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
 
-
             long l = System.currentTimeMillis();
             long offset = 0L;
             for (Module module : this.activeModules) {
@@ -477,13 +476,13 @@ public class HUD extends Module {
                 RenderUtil.disableRenderState();
                 GlStateManager.disableDepth();
                 if (this.shadow.getValue()) {
-                    if (fontMode.getValue() == 1) { // MINECRAFT
+                    if (fontMode.getValue() == 1) {
                         mcFont.drawStringWithShadow(moduleName, x / this.scale.getValue() - (this.posX.getValue() == 1 ? totalWidth : 0.0F), y / this.scale.getValue(), color);
                     } else {
                         fontRenderer.drawStringWithShadow(moduleName, x / this.scale.getValue() - (this.posX.getValue() == 1 ? totalWidth : 0.0F), y / this.scale.getValue(), color);
                     }
                 } else {
-                    if (fontMode.getValue() == 1) { // MINECRAFT
+                    if (fontMode.getValue() == 1) {
                         mcFont.drawString(
                                 moduleName,
                                 x / this.scale.getValue() - (this.posX.getValue() == 1 ? totalWidth : 0.0F),
@@ -504,7 +503,7 @@ public class HUD extends Module {
                 if (this.suffixes.getValue() && moduleSuffix.length > 0) {
                     float width;
                     switch (fontMode.getValue()) {
-                        case 1: // MINECRAFT
+                        case 1:
                             width = (float) mcFont.getStringWidth(moduleName);
                             break;
                         default:
@@ -514,7 +513,7 @@ public class HUD extends Module {
                     for (String suffix : moduleSuffix) {
                         String string = this.formatSuffix(suffix);
                         if (this.shadow.getValue()) {
-                            if (fontMode.getValue() == 1) { // MINECRAFT
+                            if (fontMode.getValue() == 1) {
                                 mcFont.drawStringWithShadow(
                                         string,
                                         x / this.scale.getValue() - (this.posX.getValue() == 1 ? totalWidth : 0.0F) + width,
@@ -530,7 +529,7 @@ public class HUD extends Module {
                                 );
                             }
                         } else {
-                            if (fontMode.getValue() == 1) { // MINECRAFT
+                            if (fontMode.getValue() == 1) {
                                 mcFont.drawString(
                                         string,
                                         x / this.scale.getValue() - (this.posX.getValue() == 1 ? totalWidth : 0.0F) + width,
@@ -561,7 +560,7 @@ public class HUD extends Module {
                     if (movementPacketSize > 0L) {
                         GlStateManager.enableBlend();
                         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                        if (fontMode.getValue() == 1) { // MINECRAFT
+                        if (fontMode.getValue() == 1) {
                             mcFont.drawString(
                                     String.valueOf(movementPacketSize),
                                     (float) new ScaledResolution(mc).getScaledWidth() / 2.0F / this.scale.getValue()
@@ -586,8 +585,6 @@ public class HUD extends Module {
             }
             GlStateManager.enableDepth();
             GlStateManager.popMatrix();
-
-
             }
         }
         renderNotifications();
@@ -739,7 +736,8 @@ public class HUD extends Module {
     }
 
     private void renderNotifications() {
-        if (!this.notifications.getValue()) return;
+        Notification notificationModule = getNotificationModule();
+        if (notificationModule == null || !notificationModule.isEnabled()) return;
 
         try {
             if (Myau.notificationManager == null) return;
@@ -874,19 +872,28 @@ public class HUD extends Module {
     }
 
     private float getHudTextWidth(String text) {
-        return fontMode.getValue() == 1 ? mcFont.getStringWidth(text) : fontRenderer.getStringWidth(text);
+        return getNotificationFontMode() == 1 ? mcFont.getStringWidth(text) : fontRenderer.getStringWidth(text);
     }
 
     private float getHudTextHeight() {
-        return fontMode.getValue() == 1 ? mcFont.FONT_HEIGHT : fontRenderer.FONT_HEIGHT;
+        return getNotificationFontMode() == 1 ? mcFont.FONT_HEIGHT : fontRenderer.FONT_HEIGHT;
     }
 
     private void drawHudText(String text, float x, float y, int color) {
-        if (fontMode.getValue() == 1) {
+        if (getNotificationFontMode() == 1) {
             mcFont.drawString(text, x, y, color, false);
         } else {
             fontRenderer.drawString(text, x, y, color, false);
         }
+    }
+
+    private int getNotificationFontMode() {
+        Notification notification = getNotificationModule();
+        return notification == null ? this.fontMode.getValue() : notification.fontMode.getValue();
+    }
+
+    private Notification getNotificationModule() {
+        return Myau.moduleManager == null ? null : (Notification) Myau.moduleManager.modules.get(Notification.class);
     }
 
     private void drawNotificationText(String text, float x, float y, int neutralColor, int statusColor) {

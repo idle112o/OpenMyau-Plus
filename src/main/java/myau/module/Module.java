@@ -2,6 +2,7 @@ package myau.module;
 
 import myau.Myau;
 import myau.module.modules.HUD;
+import myau.module.modules.Notification;
 import myau.util.KeyBindUtil;
 
 public abstract class Module {
@@ -76,12 +77,12 @@ public abstract class Module {
 
             // Add a transient in-game notification for toggles
             try {
-                if (Myau.notificationManager != null) {
-                    String action = this.enabled ? "was toggled successfully" : "was untoggled successfully";
-                    // green for enabled, red for disabled
-                    int color = this.enabled ? 0x00FF00 : 0xFF0000;
-                    Myau.notificationManager.add(this.getName() + " " + action, color);
-                }
+                    Notification notification = (Notification) Myau.moduleManager.modules.get(Notification.class);
+                    if (notification != null && notification.isEnabled() && notification.moduleToggled.getValue()) {
+                        String action = this.enabled ? "was toggled successfully" : "was untoggled successfully";
+                        int color = this.enabled ? 0x00FF00 : 0xFF0000;
+                        Myau.notificationManager.add(this.getName() + " " + action, color);
+                    }
             } catch (Exception ignored) {
             }
 

@@ -159,6 +159,7 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(WaterMark.class),
                 Myau.moduleManager.getModule(SeasonDisplay.class),
                 Myau.moduleManager.getModule(Panic.class),
+                Myau.moduleManager.getModule(Notification.class),
                 Myau.moduleManager.getModule(ClickGUIModule.class)
         );
 

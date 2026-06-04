@@ -1,5 +1,9 @@
 package myau.management;
 
+import myau.Myau;
+import myau.module.modules.Notification;
+import myau.util.ChatUtil;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +59,17 @@ public class NotificationManager {
         this.cleanupExpired();
         while (this.entries.size() >= MAX_ENTRIES) {
             this.entries.remove(0);
+        }
+
+        Notification notification = Myau.moduleManager == null ? null : (Notification) Myau.moduleManager.modules.get(Notification.class);
+        if (notification != null) {
+            if (!notification.isEnabled()) {
+                return;
+            }
+            if (notification.chat.getValue()) {
+                ChatUtil.sendFormatted("&7[&bNotification&7]&r " + message);
+                return;
+            }
         }
 
         this.entries.add(new NotificationEntry(message, durationMillis, color));
