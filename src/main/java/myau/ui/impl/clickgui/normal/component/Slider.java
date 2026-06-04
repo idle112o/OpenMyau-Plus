@@ -70,8 +70,8 @@ public class Slider extends Component {
 
         int scrolledY = y - scrollOffset;
         int alpha = (int) (255 * animationProgress);
-        String name = property.getName();
         String valStr = round(value) + (this.property instanceof PercentProperty ? "%" : "");
+        String name = mc.fontRendererObj.trimStringToWidth(property.getName(), Math.max(12, width - 18 - mc.fontRendererObj.getStringWidth(valStr)));
         mc.fontRendererObj.drawStringWithShadow(name, x + 5, scrolledY + 2, withAlpha(CleanTheme.TEXT, alpha));
         mc.fontRendererObj.drawStringWithShadow(valStr, x + width - 5 - mc.fontRendererObj.getStringWidth(valStr), scrolledY + 2, withAlpha(CleanTheme.MUTED, alpha));
 

@@ -99,7 +99,6 @@ public class Myau {
         moduleManager.modules.put(WaterMark.class, new WaterMark());
         moduleManager.modules.put(ChestESP.class, new ChestESP());
         moduleManager.modules.put(ClickGUIModule.class, new ClickGUIModule());
-        moduleManager.modules.put(RiseClickGUIModule.class, new RiseClickGUIModule());
         moduleManager.modules.put(ChestStealer.class, new ChestStealer());
         moduleManager.modules.put(Eagle.class, new Eagle());
         moduleManager.modules.put(ESP.class, new ESP());
@@ -166,7 +165,6 @@ public class Myau {
         moduleManager.modules.put(TargetHUD.class, new TargetHUD());
         moduleManager.modules.put(TargetStrafe.class, new TargetStrafe());
         moduleManager.modules.put(Tracers.class, new Tracers());
-        moduleManager.modules.put(WaterMark2.class, new WaterMark2());
         moduleManager.modules.put(TimerRange.class, new TimerRange());
         moduleManager.modules.put(Trajectories.class, new Trajectories());
         moduleManager.modules.put(Velocity.class, new Velocity());

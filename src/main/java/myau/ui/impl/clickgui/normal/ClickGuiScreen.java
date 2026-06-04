@@ -38,7 +38,6 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(KillAura.class),
                 Myau.moduleManager.getModule(CombatHelper.class),
                 Myau.moduleManager.getModule(Velocity.class),
-                Myau.moduleManager.getModule(ServerLag.class),
                 Myau.moduleManager.getModule(Reach.class),
                 Myau.moduleManager.getModule(TargetStrafe.class),
                 Myau.moduleManager.getModule(AntiFireball.class),
@@ -47,9 +46,7 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(HitBox.class),
                 Myau.moduleManager.getModule(Refill.class),
                 Myau.moduleManager.getModule(HitSelect.class),
-                Myau.moduleManager.getModule(BackTrack.class),
                 Myau.moduleManager.getModule(Hitflick.class),
-                Myau.moduleManager.getModule(TimerRange.class),
                 Myau.moduleManager.getModule(ClickAssits.class),
                 Myau.moduleManager.getModule(Criticals.class),
                 Myau.moduleManager.getModule(SprintReset.class),
@@ -82,34 +79,23 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(Tracers.class),
                 Myau.moduleManager.getModule(NameTags.class),
                 Myau.moduleManager.getModule(Xray.class),
-                Myau.moduleManager.getModule(TargetESP.class),
-                Myau.moduleManager.getModule(TargetHUD.class),
                 Myau.moduleManager.getModule(Indicators.class),
                 Myau.moduleManager.getModule(BedESP.class),
                 Myau.moduleManager.getModule(BreakProgress.class),
                 Myau.moduleManager.getModule(ItemESP.class),
                 Myau.moduleManager.getModule(ViewClip.class),
                 Myau.moduleManager.getModule(NoHurtCam.class),
-                Myau.moduleManager.getModule(HUD.class),
                 Myau.moduleManager.getModule(ChestESP.class),
                 Myau.moduleManager.getModule(Trajectories.class),
                 Myau.moduleManager.getModule(Radar.class),
                 Myau.moduleManager.getModule(FPScounter.class),
-                Myau.moduleManager.getModule(WaterMark.class),
-                Myau.moduleManager.getModule(WaterMark2.class),
                 Myau.moduleManager.getModule(HitParticleEffects.class),
-                Myau.moduleManager.getModule(DynamicIsland.class),
                 Myau.moduleManager.getModule(ESP2D.class),
-                Myau.moduleManager.getModule(RiseClickGUIModule.class),
-                Myau.moduleManager.getModule(SeasonDisplay.class),
-                Myau.moduleManager.getModule(Animations.class),
-                Myau.moduleManager.getModule(HudEditor.class),
-                Myau.moduleManager.getModule(ClickGUIModule.class)
+                Myau.moduleManager.getModule(Animations.class)
         );
 
         List<Module> playerModules = Arrays.asList(
                 Myau.moduleManager.getModule(AutoHeal.class),
-                Myau.moduleManager.getModule(FakeLag.class),
                 Myau.moduleManager.getModule(AutoTool.class),
                 Myau.moduleManager.getModule(ChestStealer.class),
                 Myau.moduleManager.getModule(InvManager.class),
@@ -143,8 +129,7 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(Disabler.class),
                 Myau.moduleManager.getModule(ClientSpoofer.class),
                 Myau.moduleManager.getModule(MurderDetector.class),
-                Myau.moduleManager.getModule(AutoHypixel.class),
-                Myau.moduleManager.getModule(Panic.class)
+                Myau.moduleManager.getModule(AutoHypixel.class)
         );
 
         List<Module> ghostModules = Arrays.asList(
@@ -158,6 +143,25 @@ public class ClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(NoHitDelay.class)
         );
 
+        List<Module> latencyModules = Arrays.asList(
+                Myau.moduleManager.getModule(BackTrack.class),
+                Myau.moduleManager.getModule(FakeLag.class),
+                Myau.moduleManager.getModule(TimerRange.class),
+                Myau.moduleManager.getModule(ServerLag.class)
+        );
+
+        List<Module> clientModules = Arrays.asList(
+                Myau.moduleManager.getModule(HUD.class),
+                Myau.moduleManager.getModule(HudEditor.class),
+                Myau.moduleManager.getModule(DynamicIsland.class),
+                Myau.moduleManager.getModule(TargetHUD.class),
+                Myau.moduleManager.getModule(TargetESP.class),
+                Myau.moduleManager.getModule(WaterMark.class),
+                Myau.moduleManager.getModule(SeasonDisplay.class),
+                Myau.moduleManager.getModule(Panic.class),
+                Myau.moduleManager.getModule(ClickGUIModule.class)
+        );
+
         Comparator<Module> comparator = Comparator.comparing(m -> m.getName().toLowerCase());
         combatModules.sort(comparator);
         movementModules.sort(comparator);
@@ -165,6 +169,8 @@ public class ClickGuiScreen extends GuiScreen {
         playerModules.sort(comparator);
         miscModules.sort(comparator);
         ghostModules.sort(comparator);
+        latencyModules.sort(comparator);
+        clientModules.sort(comparator);
 
         int currentX = 20;
         int currentY = 20;
@@ -206,16 +212,26 @@ public class ClickGuiScreen extends GuiScreen {
             currentX += (frameWidth + 15);
         }
 
-        List<Module> ghost = new ArrayList<>(ghostModules);
-        ghost.removeIf(m -> m == null);
-        if (!ghost.isEmpty()) {
-            frames.add(new Frame("Ghost", ghost, currentX, currentY, frameWidth, frameHeight));
-            currentX += (frameWidth + 15);
-        }
+        addModuleFrame("Ghost", ghostModules, currentX, currentY, frameWidth, frameHeight);
+        currentX += (frameWidth + 15);
+
+        addModuleFrame("Latency", latencyModules, currentX, currentY, frameWidth, frameHeight);
+        currentX += (frameWidth + 15);
+
+        addModuleFrame("Client", clientModules, currentX, currentY, frameWidth, frameHeight);
+        currentX += (frameWidth + 15);
 
         List<String> configs = getConfigs();
         if (!configs.isEmpty()) {
             frames.add(new Frame("Configs", configs, currentX, currentY, frameWidth, frameHeight, true));
+        }
+    }
+
+    private void addModuleFrame(String name, List<Module> modules, int x, int y, int width, int height) {
+        List<Module> filtered = new ArrayList<>(modules);
+        filtered.removeIf(m -> m == null);
+        if (!filtered.isEmpty()) {
+            frames.add(new Frame(name, filtered, x, y, width, height));
         }
     }
 

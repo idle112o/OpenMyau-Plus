@@ -24,8 +24,10 @@ public class Switch extends Component {
         boolean enabled = booleanProperty.getValue();
         if (isMouseOver(mouseX, mouseY, scrollOffset)) Gui.drawRect(x, scrolledY, x + width, scrolledY + height, withAlpha(CleanTheme.ROW_HOVER, alpha));
         if (enabled) Gui.drawRect(x + 2, scrolledY + 1, x + 4, scrolledY + height - 1, withAlpha(CleanTheme.ACCENT, alpha));
-        mc.fontRendererObj.drawStringWithShadow(booleanProperty.getName(), x + 7, scrolledY + 3, withAlpha(enabled ? 0xFFFFFFFF : 0xFFBDBDBD, alpha));
-        mc.fontRendererObj.drawStringWithShadow(enabled ? "On" : "Off", x + width - 5 - mc.fontRendererObj.getStringWidth(enabled ? "On" : "Off"), scrolledY + 3, withAlpha(enabled ? CleanTheme.ACCENT : CleanTheme.MUTED, alpha));
+        String valueText = enabled ? "On" : "Off";
+        String name = mc.fontRendererObj.trimStringToWidth(booleanProperty.getName(), Math.max(12, width - 18 - mc.fontRendererObj.getStringWidth(valueText)));
+        mc.fontRendererObj.drawStringWithShadow(name, x + 7, scrolledY + 3, withAlpha(enabled ? 0xFFFFFFFF : 0xFFBDBDBD, alpha));
+        mc.fontRendererObj.drawStringWithShadow(valueText, x + width - 5 - mc.fontRendererObj.getStringWidth(valueText), scrolledY + 3, withAlpha(enabled ? CleanTheme.ACCENT : CleanTheme.MUTED, alpha));
     }
 
     private int withAlpha(int color, int alpha) {

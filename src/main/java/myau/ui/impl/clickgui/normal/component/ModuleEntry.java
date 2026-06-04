@@ -99,14 +99,17 @@ public class ModuleEntry extends Component {
         if (alpha > 5) {
             if (FontManager.productSans16 != null) {
                 float textY = (float) (scrolledY + (height - FontManager.productSans16.getHeight()) / 2f + 1);
-                FontManager.productSans16.drawString(module.getName(), x + 10, textY, finalTextColor);
+                int rightPadding = !propertiesComponents.isEmpty() ? 24 : 8;
+                String displayName = trimToWidth(module.getName(), Math.max(12, width - 18 - rightPadding));
+                FontManager.productSans16.drawString(displayName, x + 10, textY, finalTextColor);
                 if (!propertiesComponents.isEmpty()) {
                     String icon = expanded ? "..." : ":";
                     float iconW = (float) FontManager.productSans16.getStringWidth(icon);
                     FontManager.productSans16.drawString(icon, x + width - iconW - 8, textY, MaterialTheme.getRGBWithAlpha(MaterialTheme.TEXT_COLOR_SECONDARY, alpha));
                 }
             } else {
-                mc.fontRendererObj.drawStringWithShadow(module.getName(), x + 8, scrolledY + 6, finalTextColor);
+                String displayName = trimToWidth(module.getName(), Math.max(12, width - 16));
+                mc.fontRendererObj.drawStringWithShadow(displayName, x + 8, scrolledY + 6, finalTextColor);
             }
             if (module.isEnabled()) {
                 RenderUtil.drawRoundedRect(x + 4, scrolledY + height / 2f - 1.5f, 3, 3, 1.5f, finalTextColor, true, true, true, true);
@@ -162,6 +165,31 @@ public class ModuleEntry extends Component {
             heightSum += currentSettingsHeight;
         }
         return heightSum;
+    }
+
+    private String trimToWidth(String text, int maxWidth) {
+        if (text == null) return "";
+        if (maxWidth <= 0) return "...";
+        if (FontManager.productSans16 != null) {
+            if (FontManager.productSans16.getStringWidth(text) <= maxWidth) return text;
+            String ellipsis = "...";
+            float ellipsisWidth = (float) FontManager.productSans16.getStringWidth(ellipsis);
+            if (maxWidth <= ellipsisWidth) return ellipsis;
+            String trimmed = text;
+            while (!trimmed.isEmpty() && FontManager.productSans16.getStringWidth(trimmed) + ellipsisWidth > maxWidth) {
+                trimmed = trimmed.substring(0, trimmed.length() - 1);
+            }
+            return trimmed + ellipsis;
+        }
+        if (mc.fontRendererObj.getStringWidth(text) <= maxWidth) return text;
+        String ellipsis = "...";
+        int ellipsisWidth = mc.fontRendererObj.getStringWidth(ellipsis);
+        if (maxWidth <= ellipsisWidth) return ellipsis;
+        String trimmed = text;
+        while (!trimmed.isEmpty() && mc.fontRendererObj.getStringWidth(trimmed) + ellipsisWidth > maxWidth) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed + ellipsis;
     }
 
     private boolean isMouseOverHeader(int mouseX, int mouseY, int scrollOffset) {

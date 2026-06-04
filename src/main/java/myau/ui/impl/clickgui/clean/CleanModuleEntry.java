@@ -71,7 +71,8 @@ public class CleanModuleEntry extends Component {
         int alpha = (int) (255 * animationProgress);
         if (isMouseOverHeader(mouseX, mouseY, scrollOffset)) Gui.drawRect(x, scrolledY, x + width, scrolledY + height, withAlpha(CleanTheme.ROW_HOVER, alpha));
         if (module.isEnabled()) Gui.drawRect(x, scrolledY + 1, x + 2, scrolledY + height - 1, withAlpha(CleanTheme.ACCENT, alpha));
-        mc.fontRendererObj.drawStringWithShadow(module.getName(), x + 5, scrolledY + 3, module.isEnabled() ? withAlpha(0xFFFFFFFF, alpha) : withAlpha(0xFFBDBDBD, alpha));
+        String moduleName = trimToWidth(module.getName(), width - (!propertyComponents.isEmpty() ? 17 : 8));
+        mc.fontRendererObj.drawStringWithShadow(moduleName, x + 5, scrolledY + 3, module.isEnabled() ? withAlpha(0xFFFFFFFF, alpha) : withAlpha(0xFFBDBDBD, alpha));
         if (!propertyComponents.isEmpty()) mc.fontRendererObj.drawStringWithShadow(expanded ? "<" : ">", x + width - 9, scrolledY + 3, withAlpha(CleanTheme.MUTED, alpha));
 
         float targetSettingsHeight = 0.0F;
@@ -98,6 +99,19 @@ public class CleanModuleEntry extends Component {
 
     private int withAlpha(int color, int alpha) {
         return (color & 0x00FFFFFF) | (Math.max(0, Math.min(255, alpha)) << 24);
+    }
+
+    private String trimToWidth(String text, int maxWidth) {
+        if (text == null) return "";
+        if (maxWidth <= 0 || mc.fontRendererObj.getStringWidth(text) <= maxWidth) return text;
+        String ellipsis = "...";
+        int ellipsisWidth = mc.fontRendererObj.getStringWidth(ellipsis);
+        if (maxWidth <= ellipsisWidth) return ellipsis;
+        String trimmed = text;
+        while (!trimmed.isEmpty() && mc.fontRendererObj.getStringWidth(trimmed) + ellipsisWidth > maxWidth) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed + ellipsis;
     }
 
     public float getCurrentHeight() {

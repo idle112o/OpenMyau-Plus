@@ -9,13 +9,14 @@ import myau.property.properties.ModeProperty;
 import java.awt.*;
 import myau.ui.impl.clickgui.clean.CleanClickGuiScreen;
 import myau.ui.impl.clickgui.normal.ClickGuiScreen;
+import myau.ui.impl.clickgui.rise.RiseClickGUI;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 
 public class ClickGUIModule extends Module {
 
     // ── Color palette (same as TargetESP) ────────────────────────────────────
-    private static final int[] COLORS = {
+    public static final int[] COLORS = {
             0xFF4FC3F7, // Sky Blue
             0xFF81C784, // Green
             0xFFFF8A65, // Orange
@@ -25,13 +26,13 @@ public class ClickGUIModule extends Module {
             0xFF4DB6AC, // Teal
             0xFFFFFFFF, // White
     };
-    private static final String[] COLOR_NAMES = {
+    public static final String[] COLOR_NAMES = {
             "Sky Blue", "Green", "Orange", "Purple", "Yellow", "Red", "Teal", "White"
     };
 
-    public ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Clean", "Normal"});
+    public ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Clean", "Normal", "Rise"});
     public FloatProperty cleanScale = new FloatProperty("Scale", 1.0f, 0.6f, 1.4f, () -> mode.getValue() == 0);
-    public ModeProperty accentColor = new ModeProperty("Color", 0, COLOR_NAMES, () -> mode.getValue() == 1);
+    public ModeProperty accentColor = new ModeProperty("Color", 0, COLOR_NAMES, () -> mode.getValue() == 1 || mode.getValue() == 2);
     public BooleanProperty saveGuiState = new BooleanProperty("Save GUI State", true, () -> mode.getValue() == 1);
     public BooleanProperty shadow = new BooleanProperty("Shadow", true, () -> mode.getValue() == 1);
 
@@ -71,11 +72,13 @@ public class ClickGUIModule extends Module {
     public void openSelectedGui() {
         if (mode.getValue() == 0) {
             Minecraft.getMinecraft().displayGuiScreen(CleanClickGuiScreen.getInstance());
-        } else {
+        } else if (mode.getValue() == 1) {
             ClickGuiScreen gui = ClickGuiScreen.getInstance();
             if (gui != null) {
                 Minecraft.getMinecraft().displayGuiScreen(gui);
             }
+        } else {
+            Minecraft.getMinecraft().displayGuiScreen(RiseClickGUI.getInstance());
         }
     }
 

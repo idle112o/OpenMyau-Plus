@@ -51,7 +51,6 @@ public class CleanClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(KillAura.class),
                 Myau.moduleManager.getModule(CombatHelper.class),
                 Myau.moduleManager.getModule(Velocity.class),
-                Myau.moduleManager.getModule(ServerLag.class),
                 Myau.moduleManager.getModule(Reach.class),
                 Myau.moduleManager.getModule(TargetStrafe.class),
                 Myau.moduleManager.getModule(AntiFireball.class),
@@ -60,9 +59,7 @@ public class CleanClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(HitBox.class),
                 Myau.moduleManager.getModule(Refill.class),
                 Myau.moduleManager.getModule(HitSelect.class),
-                Myau.moduleManager.getModule(BackTrack.class),
                 Myau.moduleManager.getModule(Hitflick.class),
-                Myau.moduleManager.getModule(TimerRange.class),
                 Myau.moduleManager.getModule(ClickAssits.class),
                 Myau.moduleManager.getModule(Criticals.class),
                 Myau.moduleManager.getModule(SprintReset.class),
@@ -95,34 +92,23 @@ public class CleanClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(Tracers.class),
                 Myau.moduleManager.getModule(NameTags.class),
                 Myau.moduleManager.getModule(Xray.class),
-                Myau.moduleManager.getModule(TargetESP.class),
-                Myau.moduleManager.getModule(TargetHUD.class),
                 Myau.moduleManager.getModule(Indicators.class),
                 Myau.moduleManager.getModule(BedESP.class),
                 Myau.moduleManager.getModule(BreakProgress.class),
                 Myau.moduleManager.getModule(ItemESP.class),
                 Myau.moduleManager.getModule(ViewClip.class),
                 Myau.moduleManager.getModule(NoHurtCam.class),
-                Myau.moduleManager.getModule(HUD.class),
                 Myau.moduleManager.getModule(ChestESP.class),
                 Myau.moduleManager.getModule(Trajectories.class),
                 Myau.moduleManager.getModule(Radar.class),
                 Myau.moduleManager.getModule(FPScounter.class),
-                Myau.moduleManager.getModule(WaterMark.class),
-                Myau.moduleManager.getModule(WaterMark2.class),
                 Myau.moduleManager.getModule(HitParticleEffects.class),
-                Myau.moduleManager.getModule(DynamicIsland.class),
                 Myau.moduleManager.getModule(ESP2D.class),
-                Myau.moduleManager.getModule(RiseClickGUIModule.class),
-                Myau.moduleManager.getModule(SeasonDisplay.class),
-                Myau.moduleManager.getModule(Animations.class),
-                Myau.moduleManager.getModule(HudEditor.class),
-                Myau.moduleManager.getModule(ClickGUIModule.class)
+                Myau.moduleManager.getModule(Animations.class)
         );
 
         List<Module> playerModules = Arrays.asList(
                 Myau.moduleManager.getModule(AutoHeal.class),
-                Myau.moduleManager.getModule(FakeLag.class),
                 Myau.moduleManager.getModule(AutoTool.class),
                 Myau.moduleManager.getModule(ChestStealer.class),
                 Myau.moduleManager.getModule(InvManager.class),
@@ -155,8 +141,7 @@ public class CleanClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(Disabler.class),
                 Myau.moduleManager.getModule(ClientSpoofer.class),
                 Myau.moduleManager.getModule(MurderDetector.class),
-                Myau.moduleManager.getModule(AutoHypixel.class),
-                Myau.moduleManager.getModule(Panic.class)
+                Myau.moduleManager.getModule(AutoHypixel.class)
         );
 
         List<Module> ghostModules = Arrays.asList(
@@ -170,6 +155,25 @@ public class CleanClickGuiScreen extends GuiScreen {
                 Myau.moduleManager.getModule(NoHitDelay.class)
         );
 
+        List<Module> latencyModules = Arrays.asList(
+                Myau.moduleManager.getModule(BackTrack.class),
+                Myau.moduleManager.getModule(FakeLag.class),
+                Myau.moduleManager.getModule(TimerRange.class),
+                Myau.moduleManager.getModule(ServerLag.class)
+        );
+
+        List<Module> clientModules = Arrays.asList(
+                Myau.moduleManager.getModule(HUD.class),
+                Myau.moduleManager.getModule(HudEditor.class),
+                Myau.moduleManager.getModule(DynamicIsland.class),
+                Myau.moduleManager.getModule(TargetHUD.class),
+                Myau.moduleManager.getModule(TargetESP.class),
+                Myau.moduleManager.getModule(WaterMark.class),
+                Myau.moduleManager.getModule(SeasonDisplay.class),
+                Myau.moduleManager.getModule(Panic.class),
+                Myau.moduleManager.getModule(ClickGUIModule.class)
+        );
+
         Comparator<Module> comparator = Comparator.comparing(module -> module.getName().toLowerCase());
         combatModules.sort(comparator);
         movementModules.sort(comparator);
@@ -177,6 +181,8 @@ public class CleanClickGuiScreen extends GuiScreen {
         playerModules.sort(comparator);
         miscModules.sort(comparator);
         ghostModules.sort(comparator);
+        latencyModules.sort(comparator);
+        clientModules.sort(comparator);
 
         int currentX = 12;
         int currentY = 26;
@@ -189,6 +195,8 @@ public class CleanClickGuiScreen extends GuiScreen {
         currentX = addFrame("Player", playerModules, currentX, currentY, frameWidth, frameHeight);
         currentX = addFrame("Misc", miscModules, currentX, currentY, frameWidth, frameHeight);
         currentX = addFrame("Ghost", ghostModules, currentX, currentY, frameWidth, frameHeight);
+        currentX = addFrame("Latency", latencyModules, currentX, currentY, frameWidth, frameHeight);
+        currentX = addFrame("Client", clientModules, currentX, currentY, frameWidth, frameHeight);
         addConfigFrame("Configs", getConfigs(), currentX, currentY, frameWidth, frameHeight);
     }
 

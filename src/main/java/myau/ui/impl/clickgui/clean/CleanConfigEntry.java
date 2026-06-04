@@ -19,7 +19,8 @@ public class CleanConfigEntry extends Component {
         boolean active = configName.equalsIgnoreCase(Config.lastConfig);
         if (isMouseOver(mouseX, mouseY, scrollOffset)) Gui.drawRect(x, scrolledY, x + width, scrolledY + height, withAlpha(CleanTheme.ROW_HOVER, alpha));
         if (active) Gui.drawRect(x, scrolledY + 1, x + 2, scrolledY + height - 1, withAlpha(CleanTheme.ACCENT, alpha));
-        mc.fontRendererObj.drawStringWithShadow(configName, x + 5, scrolledY + 3, active ? withAlpha(0xFFFFFFFF, alpha) : withAlpha(0xFFBDBDBD, alpha));
+        String displayName = trimToWidth(configName, width - 8);
+        mc.fontRendererObj.drawStringWithShadow(displayName, x + 5, scrolledY + 3, active ? withAlpha(0xFFFFFFFF, alpha) : withAlpha(0xFFBDBDBD, alpha));
     }
 
     public float getCurrentHeight() {
@@ -32,6 +33,19 @@ public class CleanConfigEntry extends Component {
 
     private int withAlpha(int color, int alpha) {
         return (color & 0x00FFFFFF) | (Math.max(0, Math.min(255, alpha)) << 24);
+    }
+
+    private String trimToWidth(String text, int maxWidth) {
+        if (text == null) return "";
+        if (maxWidth <= 0 || mc.fontRendererObj.getStringWidth(text) <= maxWidth) return text;
+        String ellipsis = "...";
+        int ellipsisWidth = mc.fontRendererObj.getStringWidth(ellipsis);
+        if (maxWidth <= ellipsisWidth) return ellipsis;
+        String trimmed = text;
+        while (!trimmed.isEmpty() && mc.fontRendererObj.getStringWidth(trimmed) + ellipsisWidth > maxWidth) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed + ellipsis;
     }
 
     @Override
